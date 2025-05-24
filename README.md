@@ -1,3 +1,5 @@
+<div align="left">
+
 # InstanceTimer
 
 A simple Guild Wars mod that replaces the in-game clock with an instance timer.
@@ -33,6 +35,8 @@ You can customize the timer appearance using these chat commands:
 
 - Replaces the in-game clock display with an instance timer
 - Shows time in HH:MM:SS.T format (hours:minutes:seconds.tenths)
-- Tracks current instance time
+- Tracks instance time
 
 **That's it!** No other features, no interference with gameplay - just a clean, simple instance timer.
+
+</div>
