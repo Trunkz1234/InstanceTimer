@@ -1,0 +1,7 @@
+.vs/
+InstanceTimer/Debug/
+InstanceTimer/Release/
+Debug/
+Release/
+**/Debug/
+**/Release/
