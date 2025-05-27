@@ -127,70 +127,47 @@ namespace {
     }
 
     GW::UI::Frame* CreateInstanceTimerFrame() {
-        auto frame = GW::UI::GetFrameByLabel(L"InstanceTimer");
-        if (frame)
-            return frame;
-        auto clock = GW::UI::GetFrameByLabel(L"StClock");
-        if (!(clock && clock->frame_callbacks.size()))
+        auto frame = GW::UI::GetFrameByLabel(L"StClock");
+        if (!(frame && frame->frame_callbacks.size()))
             return nullptr;
 
         if (!OnInstanceTimerWindow_UICallback_Func) {
-            OnInstanceTimerWindow_UICallback_Func = clock->frame_callbacks[0].callback;
+            OnInstanceTimerWindow_UICallback_Func = frame->frame_callbacks[0].callback;
             GW::Hook::CreateHook((void**)&OnInstanceTimerWindow_UICallback_Func, OnInstanceTimerWindow_UICallback, (void**)&OnInstanceTimerWindow_UICallback_Ret);
             GW::Hook::EnableHooks(OnInstanceTimerWindow_UICallback_Func);
         }
-
-        //const auto instance_timer_frame = GW::UI::CreateUIComponent(GW::UI::GetParentFrame(clock)->frame_id, 0x800, 0xffd, clock->frame_callbacks[0].callback, nullptr, L"InstanceTimer");
-
-        SetFontStyle(GW::UI::GetChildFrame(clock,0), currentFontStyle);
-
-        return clock; // GW::UI::GetFrameById(instance_timer_frame);
-    }
-
-    void OnCreateUIComponent(GW::UI::CreateUIComponentPacket* msg)
-    {
-        if (!(msg && msg->component_label))
-            return;
-        if (wcscmp(msg->component_label, L"StClock") == 0) {
-            GW::GameThread::Enqueue(CreateInstanceTimerFrame);
-        }
-    }
-
-    void ActivateClockWindow() {
-        const auto clock = GW::UI::GetFrameByLabel(L"StClock");
-        GW::Chat::WriteChat(GW::Chat::CHANNEL_MODERATOR, L"Component not visible");
-        if (!clock->IsVisible()) {
-            GW::UI::SetWindowVisible(GW::UI::WindowID::WindowID_InGameClock, 0x1);
-        }
+        GW::UI::SetFrameVisible(frame, true);
         if (!GW::UI::GetPreference(GW::UI::NumberPreference::ClockMode)) {
             GW::UI::SetPreference(GW::UI::NumberPreference::ClockMode, 0x1);
         }
+        GW::UI::SetWindowVisible(GW::UI::WindowID::WindowID_InGameClock, 0x1);
+
+        //const auto instance_timer_frame = GW::UI::CreateUIComponent(GW::UI::GetParentFrame(clock)->frame_id, 0x800, 0xffd, clock->frame_callbacks[0].callback, nullptr, L"InstanceTimer");
+
+        SetFontStyle(GW::UI::GetChildFrame(frame, 0), currentFontStyle);
+
+        return frame; // GW::UI::GetFrameById(instance_timer_frame);
     }
 
     void OnPostUIMessage(GW::HookStatus* status, GW::UI::UIMessage message_id, void* wParam, void* lParam) {
-        if (message_id == GW::UI::UIMessage::kMapLoaded) {
-            CreateInstanceTimerFrame();
-        }
-        if (message_id == GW::UI::UIMessage::kPreferenceValueChanged) {
-            const auto packet = (GW::UI::UIPacket::kPreferenceValueChanged*)wParam;
-            if (packet->preference_id == GW::UI::NumberPreference::ClockMode && packet->new_value != 0) {
-                CreateInstanceTimerFrame();
-            }
-        }
+        CreateInstanceTimerFrame();
     }
 
     void Init(HMODULE hModule) {
-        GW::Initialize();
-        GW::UI::RegisterUIMessageCallback(&ChatCmdHook, GW::UI::UIMessage::kMapLoaded, OnPostUIMessage);
-        GW::UI::RegisterUIMessageCallback(&ChatCmdHook, GW::UI::UIMessage::kPreferenceValueChanged, OnPostUIMessage, 0x800);
+        if (!GW::Initialize()) {
+            MessageBoxW(nullptr, L"Failed to initialize GWCA.", L"Error", MB_ICONERROR);
+            return;
+        }
+        const GW::UI::UIMessage ui_messages[] = {
+            GW::UI::UIMessage::kMapLoaded,
+            GW::UI::UIMessage::kPreferenceValueChanged,
+            GW::UI::UIMessage::kUIPositionChanged
+        };
+        for (auto message : ui_messages) {
+            GW::UI::RegisterUIMessageCallback(&ChatCmdHook, message, OnPostUIMessage, 0x800);
+        }
         GW::Chat::CreateCommand(&ChatCmdHook, L"font", OnChatCmd);
-        const auto clock = GW::UI::GetFrameByLabel(L"StClock");
-        if (!clock->IsVisible()) {
-            GW::GameThread::Enqueue(ActivateClockWindow);
-        }
-        else {
-            GW::GameThread::Enqueue(CreateInstanceTimerFrame);
-        }
+        GW::GameThread::Enqueue(CreateInstanceTimerFrame);
     }
 }
 
