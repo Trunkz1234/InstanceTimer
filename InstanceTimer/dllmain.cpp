@@ -53,7 +53,7 @@ namespace {
                 const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration % std::chrono::minutes(1));
                 const auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(duration % std::chrono::seconds(1));
 
-                const auto timer = std::format(L"\x108\x107{:01}:{:02}:{:02}.{:01}\x1",
+                const auto timer = std::format(L"\x108\x107{:01}:{:02}:{:02}.{:01}\x01",
                     hours.count(),
                     minutes.count(),
                     seconds.count(),
@@ -97,6 +97,7 @@ namespace {
     }
 
     GW::HookEntry ChatCmdHook;
+    GW::HookEntry OnCreateUIComponent_Entry;
 
     void OnChatCmd(GW::HookStatus*, const wchar_t* cmd, int argc, const LPWSTR* argv) {
         if (wcscmp(argv[0], L"font") == 0) {
@@ -146,16 +147,50 @@ namespace {
         return clock; // GW::UI::GetFrameById(instance_timer_frame);
     }
 
+    void OnCreateUIComponent(GW::UI::CreateUIComponentPacket* msg)
+    {
+        if (!(msg && msg->component_label))
+            return;
+        if (wcscmp(msg->component_label, L"StClock") == 0) {
+            GW::GameThread::Enqueue(CreateInstanceTimerFrame);
+        }
+    }
+
+    void ActivateClockWindow() {
+        const auto clock = GW::UI::GetFrameByLabel(L"StClock");
+        GW::Chat::WriteChat(GW::Chat::CHANNEL_MODERATOR, L"Component not visible");
+        if (!clock->IsVisible()) {
+            GW::UI::SetWindowVisible(GW::UI::WindowID::WindowID_InGameClock, 0x1);
+        }
+        if (!GW::UI::GetPreference(GW::UI::NumberPreference::ClockMode)) {
+            GW::UI::SetPreference(GW::UI::NumberPreference::ClockMode, 0x1);
+        }
+    }
+
     void OnPostUIMessage(GW::HookStatus* status, GW::UI::UIMessage message_id, void* wParam, void* lParam) {
         if (message_id == GW::UI::UIMessage::kMapLoaded) {
             CreateInstanceTimerFrame();
         }
+        if (message_id == GW::UI::UIMessage::kPreferenceValueChanged) {
+            const auto packet = (GW::UI::UIPacket::kPreferenceValueChanged*)wParam;
+            if (packet->preference_id == GW::UI::NumberPreference::ClockMode && packet->new_value != 0) {
+                CreateInstanceTimerFrame();
+            }
+        }
     }
+
     void Init(HMODULE hModule) {
         GW::Initialize();
         GW::UI::RegisterUIMessageCallback(&ChatCmdHook, GW::UI::UIMessage::kMapLoaded, OnPostUIMessage);
+        GW::UI::RegisterUIMessageCallback(&ChatCmdHook, GW::UI::UIMessage::kPreferenceValueChanged, OnPostUIMessage, 0x800);
         GW::Chat::CreateCommand(&ChatCmdHook, L"font", OnChatCmd);
-        GW::GameThread::Enqueue(CreateInstanceTimerFrame);
+        const auto clock = GW::UI::GetFrameByLabel(L"StClock");
+        if (!clock->IsVisible()) {
+            GW::GameThread::Enqueue(ActivateClockWindow);
+        }
+        else {
+            GW::GameThread::Enqueue(CreateInstanceTimerFrame);
+        }
     }
 }
 
