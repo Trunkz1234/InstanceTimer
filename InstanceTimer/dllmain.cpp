@@ -14,12 +14,18 @@
 #include <GWCA/GWCA.h>
 #include <GWCA/stdafx.h>
 #include <GWCA/Managers/UIMgr.h>
+#include <GWCA/Managers/StocMgr.h>
 #include <GWCA/Managers/GameThreadMgr.h>
 #include <GWCA/Managers/ChatMgr.h>
 #include <GWCA/Managers/MapMgr.h>
+#include <GWCA/Managers/AgentMgr.h>
 
 #include <GWCA/Utilities/Hook.h>
 #include <GWCA/Utilities/Hooker.h>
+
+#include <GWCA/Packets/StoC.h>
+
+#include <GWCA/GameEntities/Agent.h>
 
 namespace {
     HMODULE g_hModule = nullptr;
@@ -59,7 +65,7 @@ namespace {
                     seconds.count(),
                     milliseconds.count() / 100);
 
-                GW::UI::SendFrameUIMessage(GW::UI::GetChildFrame(frame, 0), (GW::UI::UIMessage)0x4c, (void*)timer.c_str(), 0);
+                GW::UI::SendFrameUIMessage(GW::UI::GetChildFrame(frame, 0), (GW::UI::UIMessage)0x4d, (void*)timer.c_str(), 0);
                 GW::Hook::LeaveHook();
                 return;
             } break;
@@ -136,11 +142,12 @@ namespace {
             GW::Hook::CreateHook((void**)&OnInstanceTimerWindow_UICallback_Func, OnInstanceTimerWindow_UICallback, (void**)&OnInstanceTimerWindow_UICallback_Ret);
             GW::Hook::EnableHooks(OnInstanceTimerWindow_UICallback_Func);
         }
-        GW::UI::SetFrameVisible(frame, true);
+
         if (!GW::UI::GetPreference(GW::UI::NumberPreference::ClockMode)) {
             GW::UI::SetPreference(GW::UI::NumberPreference::ClockMode, 0x1);
         }
-        GW::UI::SetWindowVisible(GW::UI::WindowID::WindowID_InGameClock, 0x1);
+
+        GW::UI::SetWindowVisible(GW::UI::WindowID_InGameClock, true);
 
         //const auto instance_timer_frame = GW::UI::CreateUIComponent(GW::UI::GetParentFrame(clock)->frame_id, 0x800, 0xffd, clock->frame_callbacks[0].callback, nullptr, L"InstanceTimer");
 
@@ -161,7 +168,6 @@ namespace {
         const GW::UI::UIMessage ui_messages[] = {
             GW::UI::UIMessage::kMapLoaded,
             GW::UI::UIMessage::kPreferenceValueChanged,
-            GW::UI::UIMessage::kUIPositionChanged
         };
         for (auto message : ui_messages) {
             GW::UI::RegisterUIMessageCallback(&ChatCmdHook, message, OnPostUIMessage, 0x800);
