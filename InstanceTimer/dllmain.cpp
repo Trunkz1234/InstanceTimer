@@ -14,12 +14,18 @@
 #include <GWCA/GWCA.h>
 #include <GWCA/stdafx.h>
 #include <GWCA/Managers/UIMgr.h>
+#include <GWCA/Managers/StocMgr.h>
 #include <GWCA/Managers/GameThreadMgr.h>
 #include <GWCA/Managers/ChatMgr.h>
 #include <GWCA/Managers/MapMgr.h>
+#include <GWCA/Managers/AgentMgr.h>
 
 #include <GWCA/Utilities/Hook.h>
 #include <GWCA/Utilities/Hooker.h>
+
+#include <GWCA/Packets/StoC.h>
+
+#include <GWCA/GameEntities/Agent.h>
 
 namespace {
     HMODULE g_hModule = nullptr;
@@ -53,13 +59,13 @@ namespace {
                 const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration % std::chrono::minutes(1));
                 const auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(duration % std::chrono::seconds(1));
 
-                const auto timer = std::format(L"\x108\x107{:01}:{:02}:{:02}.{:01}\x1",
+                const auto timer = std::format(L"\x108\x107{:01}:{:02}:{:02}.{:01}\x01",
                     hours.count(),
                     minutes.count(),
                     seconds.count(),
                     milliseconds.count() / 100);
 
-                GW::UI::SendFrameUIMessage(GW::UI::GetChildFrame(frame, 0), (GW::UI::UIMessage)0x4c, (void*)timer.c_str(), 0);
+                GW::UI::SendFrameUIMessage(GW::UI::GetChildFrame(frame, 0), (GW::UI::UIMessage)0x4d, (void*)timer.c_str(), 0);
                 GW::Hook::LeaveHook();
                 return;
             } break;
@@ -97,6 +103,7 @@ namespace {
     }
 
     GW::HookEntry ChatCmdHook;
+    GW::HookEntry OnCreateUIComponent_Entry;
 
     void OnChatCmd(GW::HookStatus*, const wchar_t* cmd, int argc, const LPWSTR* argv) {
         if (wcscmp(argv[0], L"font") == 0) {
@@ -126,34 +133,45 @@ namespace {
     }
 
     GW::UI::Frame* CreateInstanceTimerFrame() {
-        auto frame = GW::UI::GetFrameByLabel(L"InstanceTimer");
-        if (frame)
-            return frame;
-        auto clock = GW::UI::GetFrameByLabel(L"StClock");
-        if (!(clock && clock->frame_callbacks.size()))
+        auto frame = GW::UI::GetFrameByLabel(L"StClock");
+        if (!(frame && frame->frame_callbacks.size()))
             return nullptr;
 
         if (!OnInstanceTimerWindow_UICallback_Func) {
-            OnInstanceTimerWindow_UICallback_Func = clock->frame_callbacks[0].callback;
+            OnInstanceTimerWindow_UICallback_Func = frame->frame_callbacks[0].callback;
             GW::Hook::CreateHook((void**)&OnInstanceTimerWindow_UICallback_Func, OnInstanceTimerWindow_UICallback, (void**)&OnInstanceTimerWindow_UICallback_Ret);
             GW::Hook::EnableHooks(OnInstanceTimerWindow_UICallback_Func);
         }
 
+        if (!GW::UI::GetPreference(GW::UI::NumberPreference::ClockMode)) {
+            GW::UI::SetPreference(GW::UI::NumberPreference::ClockMode, 0x1);
+        }
+
+        GW::UI::SetWindowVisible(GW::UI::WindowID_InGameClock, true);
+
         //const auto instance_timer_frame = GW::UI::CreateUIComponent(GW::UI::GetParentFrame(clock)->frame_id, 0x800, 0xffd, clock->frame_callbacks[0].callback, nullptr, L"InstanceTimer");
 
-        SetFontStyle(GW::UI::GetChildFrame(clock,0), currentFontStyle);
+        SetFontStyle(GW::UI::GetChildFrame(frame, 0), currentFontStyle);
 
-        return clock; // GW::UI::GetFrameById(instance_timer_frame);
+        return frame; // GW::UI::GetFrameById(instance_timer_frame);
     }
 
     void OnPostUIMessage(GW::HookStatus* status, GW::UI::UIMessage message_id, void* wParam, void* lParam) {
-        if (message_id == GW::UI::UIMessage::kMapLoaded) {
-            CreateInstanceTimerFrame();
-        }
+        CreateInstanceTimerFrame();
     }
+
     void Init(HMODULE hModule) {
-        GW::Initialize();
-        GW::UI::RegisterUIMessageCallback(&ChatCmdHook, GW::UI::UIMessage::kMapLoaded, OnPostUIMessage);
+        if (!GW::Initialize()) {
+            MessageBoxW(nullptr, L"Failed to initialize GWCA.", L"Error", MB_ICONERROR);
+            return;
+        }
+        const GW::UI::UIMessage ui_messages[] = {
+            GW::UI::UIMessage::kMapLoaded,
+            GW::UI::UIMessage::kPreferenceValueChanged,
+        };
+        for (auto message : ui_messages) {
+            GW::UI::RegisterUIMessageCallback(&ChatCmdHook, message, OnPostUIMessage, 0x800);
+        }
         GW::Chat::CreateCommand(&ChatCmdHook, L"font", OnChatCmd);
         GW::GameThread::Enqueue(CreateInstanceTimerFrame);
     }
