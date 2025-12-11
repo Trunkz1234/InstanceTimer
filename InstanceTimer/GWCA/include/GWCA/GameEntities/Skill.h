@@ -56,9 +56,10 @@ namespace GW {
         /* +h0088 */ uint32_t projectile_animation_2_id;
         /* +h008C */ uint32_t icon_file_id;
         /* +h0090 */ uint32_t icon_file_id_2;
-        /* +h0094 */ uint32_t name; // String id
-        /* +h0098 */ uint32_t concise; // String id
-        /* +h009C */ uint32_t description; // String id
+        /* +h0094 */ uint32_t icon_file_id_hi_res;
+        /* +h0098 */ uint32_t name; // String id
+        /* +h009C */ uint32_t concise; // String id
+        /* +h00A0 */ uint32_t description; // String id
 
         uint8_t GetEnergyCost() const {
             switch (energy_cost) {
@@ -80,7 +81,7 @@ namespace GW {
         [[nodiscard]] bool IsNonStacking() const { return (special & 0x20000) != 0; }
         [[nodiscard]] bool IsUnused() const;
     };
-    static_assert(sizeof(Skill) == 0xa0, "struct Skill has incorrect size");
+    static_assert(sizeof(Skill) == 0xa4, "struct Skill has incorrect size");
 
     struct SkillbarSkill { // total: 0x14/20
         /* +h0000 */ uint32_t adrenaline_a;
@@ -93,19 +94,26 @@ namespace GW {
     };
     static_assert(sizeof(SkillbarSkill) == 20, "struct SkillbarSkill has incorrect size");
 
+    struct SkillbarCast {
+        /* +h0000 */ uint16_t h0000;
+        /* +h0004 */ Constants::SkillID skill_id;
+        /* +h0008 */ uint32_t h0008;
+    };
+
+    typedef Array<SkillbarCast> SkillbarCastArray;
+
     struct Skillbar { // total: 0xBC/188
         /* +h0000 */ uint32_t agent_id; // id of the agent whose skillbar this is
         /* +h0004 */ SkillbarSkill skills[8];
         /* +h00A4 */ uint32_t disabled;
-        /* +h00A8 */ uint32_t h00A8[2];
-        /* +h00B0 */ uint32_t casting;
-        /* +h00B4 */ uint32_t h00B4[2];
+        /* +h00A8 */ SkillbarCastArray cast_array;
+        /* +h00B8 */ uint32_t h00B8;
 
         bool IsValid() const { return agent_id > 0; }
 
-        GWCA_API SkillbarSkill *GetSkillById(Constants::SkillID skill_id, size_t* slot_out = nullptr);
+        GWCA_API SkillbarSkill* GetSkillById(Constants::SkillID skill_id, size_t* slot_out = nullptr);
     };
-    static_assert(sizeof(Skillbar) == 188, "struct Skillbar has incorrect size");
+    static_assert(sizeof(Skillbar) == 0xbc, "struct Skillbar has incorrect size");
 
     typedef Array<Skillbar> SkillbarArray;
 

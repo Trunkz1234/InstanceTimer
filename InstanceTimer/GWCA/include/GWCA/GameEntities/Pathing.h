@@ -5,7 +5,15 @@
 namespace GW {
     struct PathingTrapezoid { // total: 0x30/48
         /* +h0000 */ uint32_t id;
+        union {
         /* +h0004 */ PathingTrapezoid* adjacent[4];
+            struct {
+        /* +h0004 */ PathingTrapezoid* top_left;
+        /* +h0008 */ PathingTrapezoid* top_right;
+        /* +h000C */ PathingTrapezoid* bottom_left;
+        /* +h0010 */ PathingTrapezoid* bottom_right;
+            };
+        };
         /* +h0014 */ uint16_t portal_left;
         /* +h0016 */ uint16_t portal_right;
         /* +h0018 */ float XTL;
@@ -43,10 +51,10 @@ namespace GW {
     static_assert(sizeof(SinkNode) == 12, "struct SinkNode has incorrect size");
 
     struct Portal { // total: 0x14/20
-        /* +h0000 */ uint16_t left_layer_id;
-        /* +h0002 */ uint16_t right_layer_id;
-        /* +h0004 */ uint32_t h0004;
-        /* +h0008 */ Portal   *pair;
+        /* +h0000 */ uint16_t portal_plane;
+        /* +h0002 */ uint16_t neighbor_plane;
+        /* +h0004 */ uint32_t flags; // 0x4 => "Not used for path finding"
+        /* +h0008 */ Portal  *pair;
         /* +h000C */ uint32_t count;
         /* +h0010 */ PathingTrapezoid **trapezoids;
     };
@@ -55,9 +63,9 @@ namespace GW {
     struct PathingMap { // total: 0x54/84
         /* +h0000 */ uint32_t zplane; // ground plane = UINT_MAX, rest 0 based index
         /* +h0004 */ uint32_t h0004;
-        /* +h0008 */ uint32_t h0008;
-        /* +h000C */ uint32_t h000C;
-        /* +h0010 */ uint32_t h0010;
+        /* +h0008 */ void    *allocatedBuffer; // All following data are stored in a buffer allocated with a single MemAlloc. This is the pointer.
+        /* +h000C */ uint32_t h0010_count; // count of number h0010
+        /* +h0010 */ uint32_t *h0010; // elements of this array are 8 bytes
         /* +h0014 */ uint32_t trapezoid_count;
         /* +h0018 */ PathingTrapezoid* trapezoids;
         /* +h001C */ uint32_t sink_node_count;
@@ -66,14 +74,12 @@ namespace GW {
         /* +h0028 */ XNode    *x_nodes;
         /* +h002C */ uint32_t y_node_count;
         /* +h0030 */ YNode    *y_nodes;
-        /* +h0034 */ uint32_t h0034;
-        /* +h0038 */ uint32_t h0038;
+        /* +h0034 */ uint32_t portal_trapezoids_count;
+        /* +h0038 */ PathingTrapezoid **portal_trapezoids;
         /* +h003C */ uint32_t portal_count;
         /* +h0040 */ Portal   *portals;
         /* +h0044 */ Node     *root_node;
-        /* +h0048 */ uint32_t *h0048;
-        /* +h004C */ uint32_t *h004C;
-        /* +h0050 */ uint32_t *h0050;
+        /* +h0048 */ BaseArray<Vec2f> dat_vectors; // this is an array of vectors read from the dat file. When reading the xnodes or ynodes from the dat file, an index will be used to get the pos.
     };
     static_assert(sizeof(PathingMap) == 84, "struct PathingMap has incorrect size");
 

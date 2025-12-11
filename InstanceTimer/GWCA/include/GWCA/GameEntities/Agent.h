@@ -27,14 +27,24 @@ namespace GW {
 
     typedef TList<VisibleEffect> VisibleEffectList;
 
+    struct NPCEquipment;
+    struct EquipmentVTable {
+        void(__fastcall* Destroy)(NPCEquipment* this_ptr);
+        void(__fastcall* GetItemClassFlags)(NPCEquipment* this_ptr, uint32_t edx, uint32_t slot);
+        void(__fastcall* EquipItem)(NPCEquipment* this_ptr, uint32_t edx, uint32_t slot);
+        void(__fastcall* LoadModelMaybe)(NPCEquipment* this_ptr, uint32_t edx, uint32_t slot);
+        void(__fastcall* RemoveItem)(NPCEquipment* this_ptr, uint32_t edx, uint32_t slot);
+        void(__fastcall* RefreshModelMaybe)(NPCEquipment* this_ptr);
+        bool(__fastcall* ModelRelatedBooleanCheck)(NPCEquipment* this_ptr);
+        uint32_t(__fastcall* GetType)(NPCEquipment* this_ptr);
+    };
     // Courtesy of DerMonech14
-    struct Equipment {
-
-        /* +h0000 */ void     *vtable;
+    struct NPCEquipment {
+        /* +h0000 */ EquipmentVTable* vtable;
         /* +h0004 */ uint32_t h0004;            // always 2 ?
-        /* +h0008 */ uint32_t h0008;            // Ptr PlayerModelFile?
+        /* +h0008 */ void* model_handle;            // Ptr PlayerModelFile?
         /* +h000C */ uint32_t h000C;            // 
-        /* +h0010 */ ItemData* reft_hand_ptr;   // Ptr Bow, Hammer, Focus, Daggers, Scythe
+        /* +h0010 */ ItemData* left_hand_ptr;   // Ptr Bow, Hammer, Focus, Daggers, Scythe
         /* +h0014 */ ItemData* right_hand_ptr;  // Ptr Sword, Spear, Staff, Daggers, Axe, Zepter, Bundle
         /* +h0018 */ uint32_t h0018;            // 
         /* +h001C */ ItemData* shield_ptr;      // Ptr Shield
@@ -43,17 +53,17 @@ namespace GW {
         /* +h0022 */ uint8_t head_map;          // Head        None = 9, Headpiece Ele = 4
         /* +h0023 */ uint8_t shield_map;        // Shield      None = 9, Shield = 1
         union {
-        /* +h0024 */ ItemData items[9];
+            /* +h0024 */ ItemData items[9];
             struct {
-        /* +h0024 */ ItemData weapon;
-        /* +h0034 */ ItemData offhand;
-        /* +h0044 */ ItemData chest;
-        /* +h0054 */ ItemData legs;
-        /* +h0064 */ ItemData head;
-        /* +h0074 */ ItemData feet;
-        /* +h0084 */ ItemData hands;
-        /* +h0094 */ ItemData costume_body;
-        /* +h00A4 */ ItemData costume_head;
+                /* +h0024 */ ItemData weapon;
+                /* +h0034 */ ItemData offhand;
+                /* +h0044 */ ItemData chest;
+                /* +h0054 */ ItemData legs;
+                /* +h0064 */ ItemData head;
+                /* +h0074 */ ItemData feet;
+                /* +h0084 */ ItemData hands;
+                /* +h0094 */ ItemData costume_body;
+                /* +h00A4 */ ItemData costume_head;
             };
         };
         union {
@@ -70,7 +80,56 @@ namespace GW {
                 /* +h00D4 */ ItemID item_id_costume_head;
             };
         };
+        /* +h00D8 */ uint32_t h00D8[0x7];   // Padding (28 bytes = 7 uint32_t)
+        /* +h00F4 */ uint8_t h00F4[5];      // Padding (5 bytes)
+        /* +h00F9 */ uint8_t weapon_item_type;      // Weapon item type for stance/animation
+        /* +h00FA */ uint16_t weapon_item_id;       // Weapon item id for stance/animation  
+        /* +h00FC */ uint8_t h00FC[0xD];    // Padding (13 bytes)
+        /* +h0109 */ uint8_t offhand_item_type;     // Offhand item type for stance/animation
+        /* +h010A */ uint16_t offhand_item_id;      // Offhand item id for stance/animation
+
+        inline uint32_t GetType() {
+            return vtable->GetType(this);
+        }
+        inline bool RedrawEquipmentSlot(uint32_t slot) {
+            if (!(slot < _countof(items) && items[slot].model_file_id))
+                return false;
+            return vtable->EquipItem(this, 0, slot), true;
+        }
+        inline bool UndrawEquipmentSlot(uint32_t slot) {
+            if (!(slot < _countof(items) && items[slot].model_file_id))
+                return false;
+            return vtable->RemoveItem(this, 0, slot), true;
+        }
     };
+    static_assert(sizeof(NPCEquipment) == 0x10C);
+
+    struct PlayerEquipment : NPCEquipment {
+        /* +h010C */ uint32_t h010C;         // From constructor param_3
+        /* +h0110 */ uint32_t h0110[0xB2];   // Padding (178 uint32_t = 0x2C8 bytes)
+        /* +h03D8 */ uint32_t equipment_flags; // Equipment redraw flags (0xFFFFFFFF = needs draw, 0x00000000 = fully drawn)
+        /* +h03DC */ uint32_t h03DC;         // Initialized to 0
+        /* +h03E0 */ uint32_t visibility_flags; // Equipment visibility flags (0xFFFFFFFF initial)
+        /* +h03E4 */ uint32_t h03E4;         // param_1 from constructor
+        /* +h03E8 */ uint32_t h03E8[4];      // Padding to reach 0x3F8 (16 bytes)
+
+        // Check if any equipment is waiting for redraw (any bits set)
+        inline bool PendingRedraw() {
+            return equipment_flags != 0;
+        }
+
+        // Check if equipment needs initial draw (all bits set)
+        inline bool PendingFirstDraw() {
+            return equipment_flags == 0xFFFFFFFF;
+        }
+
+        // Check if equipment is fully drawn (all bits cleared)
+        inline bool IsFullyDrawn() {
+            return equipment_flags == 0;
+        }
+    };
+    static_assert(sizeof(PlayerEquipment) == 0x3F8);
+
 
     struct TagInfo {
         /* +h0000 */ uint16_t guild_id;
@@ -170,7 +229,7 @@ namespace GW {
     static_assert(sizeof(AgentGadget) == 228, "struct AgentGadget has incorrect size");
     static_assert(offsetof(AgentGadget, h00C4) == 0xC4, "struct AgentGadget offsets are incorrect");
 
-    struct AgentLiving : public Agent { // total: 0x1C0/448
+    struct AgentLiving : public Agent { // total: 0x1C4/452
         /* +h00C4 */ AgentID owner;
         /* +h00C8 */ uint32_t h00C8;
         /* +h00CC */ uint32_t h00CC;
@@ -184,49 +243,50 @@ namespace GW {
         /* +h00F4 */ uint16_t player_number; // Selfexplanatory. All non-players have identifiers for their type. Two of the same mob = same number
         /* +h00F6 */ uint16_t agent_model_type; // Player = 0x3000, NPC = 0x2000
         /* +h00F8 */ uint32_t transmog_npc_id; // Actually, it's 0x20000000 | npc_id, It's not defined for npc, minipet, etc...
-        /* +h00FC */ Equipment** equip;
+        /* +h00FC */ NPCEquipment** equip;
         /* +h0100 */ uint32_t h0100;
-        /* +h0104 */ TagInfo *tags; // struct { uint16_t guild_id, uint8_t primary, uint8_t secondary, uint16_t level
-        /* +h0108 */ uint16_t  h0108;
-        /* +h010A */ uint8_t  primary; // Primary profession 0-10 (None,W,R,Mo,N,Me,E,A,Rt,P,D)
-        /* +h010B */ uint8_t  secondary; // Secondary profession 0-10 (None,W,R,Mo,N,Me,E,A,Rt,P,D)
-        /* +h010C */ uint8_t  level; // Duh!
-        /* +h010D */ uint8_t  team_id; // 0=None, 1=Blue, 2=Red, 3=Yellow
-        /* +h010E */ uint8_t  h010E[2];
-        /* +h0110 */ uint32_t h0110;
-        /* +h0114 */ float energy_regen;
-        /* +h0118 */ uint32_t h0118;
-        /* +h011C */ float energy; // Only works for yourself
-        /* +h0120 */ uint32_t max_energy; // Only works for yourself
-        /* +h0124 */ uint32_t h0124;
-        /* +h0128 */ float hp_pips; // Regen/degen as float
-        /* +h012C */ uint32_t h012C;
-        /* +h0130 */ float hp; // Health in % where 1=100% and 0=0%
-        /* +h0134 */ uint32_t max_hp; // Only works for yourself
-        /* +h0138 */ uint32_t effects; // Bitmap for effects to display when targetted. DOES include hexes
-        /* +h013C */ uint32_t h013C;
-        /* +h0140 */ uint8_t  hex; // Bitmap for the hex effect when targetted (apparently obsolete!) (yes)
-        /* +h0141 */ uint8_t  h0141[19];
-        /* +h0154 */ uint32_t model_state; // Different values for different states of the model.
-        /* +h0158 */ uint32_t type_map; // Odd variable! 0x08 = dead, 0xC00 = boss, 0x40000 = spirit, 0x400000 = player
-        /* +h015C */ uint32_t h015C[4];
-        /* +h016C */ uint32_t in_spirit_range; // Tells if agent is within spirit range of you. Doesn't work anymore?
-        /* +h0170 */ VisibleEffectList visible_effects;
-        /* +h017C */ uint32_t h017C;
-        /* +h0180 */ uint32_t login_number; // Unique number in instance that only works for players
-        /* +h0184 */ float    animation_speed;  // Speed of the current animation
-        /* +h0188 */ uint32_t animation_code; // related to animations
-        /* +h018C */ uint32_t animation_id;     // Id of the current animation
-        /* +h0190 */ uint8_t  h0190[32];
-        /* +h01B0 */ uint8_t  dagger_status; // 0x1 = used lead attack, 0x2 = used offhand attack, 0x3 = used dual attack
-        /* +h01B1 */ Constants::Allegiance  allegiance; // 0x1 = ally/non-attackable, 0x2 = neutral, 0x3 = enemy, 0x4 = spirit/pet, 0x5 = minion, 0x6 = npc/minipet
-        /* +h01B2 */ uint16_t  weapon_type; // 1=bow, 2=axe, 3=hammer, 4=daggers, 5=scythe, 6=spear, 7=sWORD, 10=wand, 12=staff, 14=staff
-        /* +h01B4 */ uint16_t  skill; // 0 = not using a skill. Anything else is the Id of that skill
-        /* +h01B6 */ uint16_t  h01B6;
-        /* +h01B8 */ uint8_t  weapon_item_type;
-        /* +h01B9 */ uint8_t  offhand_item_type;
-        /* +h01BA */ uint16_t  weapon_item_id;
-        /* +h01BC */ uint16_t  offhand_item_id;
+        /* +h0104 */ uint32_t h0104; // New variable added here
+        /* +h0108 */ TagInfo* tags; // struct { uint16_t guild_id, uint8_t primary, uint8_t secondary, uint16_t level
+        /* +h010C */ uint16_t  h010C;
+        /* +h010E */ uint8_t  primary; // Primary profession 0-10 (None,W,R,Mo,N,Me,E,A,Rt,P,D)
+        /* +h010F */ uint8_t  secondary; // Secondary profession 0-10 (None,W,R,Mo,N,Me,E,A,Rt,P,D)
+        /* +h0110 */ uint8_t  level; // Duh!
+        /* +h0111 */ uint8_t  team_id; // 0=None, 1=Blue, 2=Red, 3=Yellow
+        /* +h0112 */ uint8_t  h0112[2];
+        /* +h0114 */ uint32_t h0114;
+        /* +h0118 */ float energy_regen;
+        /* +h011C */ uint32_t h011C;
+        /* +h0120 */ float energy; // Only works for yourself
+        /* +h0124 */ uint32_t max_energy; // Only works for yourself
+        /* +h0128 */ uint32_t h0128;
+        /* +h012C */ float hp_pips; // Regen/degen as float
+        /* +h0130 */ uint32_t h0130;
+        /* +h0134 */ float hp; // Health in % where 1=100% and 0=0%
+        /* +h0138 */ uint32_t max_hp; // Only works for yourself
+        /* +h013C */ uint32_t effects; // Bitmap for effects to display when targetted. DOES include hexes
+        /* +h0140 */ uint32_t h0140;
+        /* +h0144 */ uint8_t  hex; // Bitmap for the hex effect when targetted (apparently obsolete!) (yes)
+        /* +h0145 */ uint8_t  h0145[19];
+        /* +h0158 */ uint32_t model_state; // Different values for different states of the model.
+        /* +h015C */ uint32_t type_map; // Odd variable! 0x08 = dead, 0xC00 = boss, 0x40000 = spirit, 0x400000 = player
+        /* +h0160 */ uint32_t h0160[4];
+        /* +h0170 */ uint32_t in_spirit_range; // Tells if agent is within spirit range of you. Doesn't work anymore?
+        /* +h0174 */ VisibleEffectList visible_effects;
+        /* +h0180 */ uint32_t h0180;
+        /* +h0184 */ uint32_t login_number; // Unique number in instance that only works for players
+        /* +h0188 */ float    animation_speed;  // Speed of the current animation
+        /* +h018C */ uint32_t animation_code; // related to animations
+        /* +h0190 */ uint32_t animation_id;     // Id of the current animation
+        /* +h0194 */ uint8_t  h0194[32];
+        /* +h01B4 */ uint8_t  dagger_status; // 0x1 = used lead attack, 0x2 = used offhand attack, 0x3 = used dual attack
+        /* +h01B5 */ Constants::Allegiance  allegiance; // 0x1 = ally/non-attackable, 0x2 = neutral, 0x3 = enemy, 0x4 = spirit/pet, 0x5 = minion, 0x6 = npc/minipet
+        /* +h01B6 */ uint16_t  weapon_type; // 1=bow, 2=axe, 3=hammer, 4=daggers, 5=scythe, 6=spear, 7=sWORD, 10=wand, 12=staff, 14=staff
+        /* +h01B8 */ uint16_t  skill; // 0 = not using a skill. Anything else is the Id of that skill
+        /* +h01BA */ uint16_t  h01BA;
+        /* +h01BC */ uint8_t  weapon_item_type;
+        /* +h01BD */ uint8_t  offhand_item_type;
+        /* +h01BE */ uint16_t  weapon_item_id;
+        /* +h01C0 */ uint16_t  offhand_item_id;
 
         // Health Bar Effect Bitmasks.
         inline bool GetIsBleeding()        const { return (effects & 0x0001) != 0; }
@@ -253,7 +313,7 @@ namespace GW {
 
         // Modelstates.
         inline bool GetIsKnockedDown()     const { return model_state == 1104; }
-        inline bool GetIsMoving()          const { return model_state == 12 || model_state == 76   || model_state == 204; }
+        inline bool GetIsMoving()          const { return model_state == 12 || model_state == 76 || model_state == 204; }
         inline bool GetIsAttacking()       const { return model_state == 96 || model_state == 1088 || model_state == 1120; }
         inline bool GetIsCasting()         const { return model_state == 65 || model_state == 581; }
         inline bool GetIsIdle()            const { return model_state == 68 || model_state == 64 || model_state == 100; }
@@ -264,7 +324,7 @@ namespace GW {
         inline bool IsPlayer()             const { return login_number != 0; }
         inline bool IsNPC()                const { return login_number == 0; }
     };
-    static_assert(sizeof(AgentLiving) == 0x1C0, "struct AgentLiving has incorrect size");
+    static_assert(sizeof(AgentLiving) == 0x1C4, "struct AgentLiving has incorrect size");
     static_assert(offsetof(AgentLiving, owner) == 0xC4, "struct AgentLiving offsets are incorrect");
 
     AgentItem* Agent::GetAsAgentItem() {

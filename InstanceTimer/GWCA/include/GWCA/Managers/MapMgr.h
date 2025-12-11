@@ -15,6 +15,8 @@ namespace GW {
     typedef Array<PathingMap> PathingMapArray;
     typedef Array<MissionMapIcon> MissionMapIconArray;
 
+    struct MapContext;
+
     namespace Constants {
         enum class MapID : uint32_t;
         enum class District;
@@ -95,7 +97,13 @@ namespace GW {
 
         GWCA_API WorldMapContext* GetWorldMapContext();
 
-        GWCA_API int QueryAltitude(const GamePos& pos, float radius, float& alt, Vec3f* terrain_normal = nullptr);
+        // Allows you to load map geometry/pathing/props from the DAT file if you know a map's file_id. Be sure to call DestroyMapContext later to avoid a mem leak
+        GWCA_API MapContext* CreateMapContext(uint32_t map_file_id);
+
+        // Call this to free a MapContext created via CreateMapContext
+        GWCA_API bool DestroyMapContext(MapContext*);
+
+        GWCA_API float QueryAltitude(const GamePos* pos, float radius = 5.f, GW::MapContext* context = 0);
 
         GWCA_API bool GetIsMapLoaded();
 
@@ -107,9 +115,6 @@ namespace GW {
 
         // Get current region you are in.
         GWCA_API GW::Constants::ServerRegion GetRegion();
-
-        // Can be used to get the instance type for auth server request
-        GWCA_API MapTypeInstanceInfo* GetMapTypeInstanceInfo(RegionType map_type);
 
         // Get current language you are in.
         GWCA_API GW::Constants::Language GetLanguage();
