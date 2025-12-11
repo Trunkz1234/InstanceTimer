@@ -7,13 +7,14 @@ namespace GW {
     namespace Constants {
         enum class Language;
         enum class MapID : uint32_t;
+        enum class InstanceType;
     }
     struct CharContext;
     GWCA_API CharContext* GetCharContext();
 
     struct ObserverMatch;
 
-    struct ProgressBar {
+    struct ProgressBarContext {
         int     pips;
         uint8_t color[4];      // RGBA
         uint8_t background[4]; // RGBA
@@ -46,15 +47,15 @@ namespace GW {
         /* +h0224 */ GW::Constants::Language language;
         /* +h0228 */ GW::Constants::MapID observe_map_id;
         /* +h022C */ GW::Constants::MapID current_map_id;
-        /* +h0230 */ uint32_t observe_map_type;
-        /* +h0234 */ uint32_t current_map_type;
+        /* +h0230 */ Constants::InstanceType observe_map_type;
+        /* +h0234 */ Constants::InstanceType current_map_type;
         /* +h0238 */ uint32_t h0238[5];
         /* +h024C */ Array<ObserverMatch*> observer_matches;
         /* +h025C */ uint32_t h025C[17];
         /* +h02a0 */ uint32_t player_flags; // bitwise something
         /* +h02A4 */ uint32_t player_number;
         /* +h02A8 */ uint32_t h02A8[40];
-        /* +h0348 */ ProgressBar *progress_bar; // seems to never be nullptr
+        /* +h0348 */ ProgressBarContext* progress_bar; // seems to never be nullptr
         /* +h034C */ uint32_t h034C[27];
         /* +h03B8 */ wchar_t player_email[0x40];
     };

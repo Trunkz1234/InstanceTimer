@@ -47,9 +47,9 @@ namespace {
         const auto clock = GW::UI::GetFrameByLabel(L"StClock"); // To be removed if creating new UI component
         //if (frame && frame->child_offset_id == instance_timer_child_frame_id) {
         if (frame && frame->child_offset_id == clock->child_offset_id) {
-            switch ((uint32_t)message->message_id) {
-            case 0x37:
-            case 0x3d: {
+            switch ((GW::UI::UIMessage)message->message_id) {
+            case GW::UI::UIMessage::kRefreshContent:
+            case GW::UI::UIMessage::kFrameMessage_0x3d: {
 
                 const int instance_time = GW::Map::GetInstanceTime();
                 const auto duration = std::chrono::milliseconds(instance_time);
@@ -65,7 +65,7 @@ namespace {
                     seconds.count(),
                     milliseconds.count() / 100);
 
-                GW::UI::SendFrameUIMessage(GW::UI::GetChildFrame(frame, 0), (GW::UI::UIMessage)0x4d, (void*)timer.c_str(), 0);
+                GW::UI::SendFrameUIMessage(GW::UI::GetChildFrame(frame, 0), (GW::UI::UIMessage)0x5a, (void*)timer.c_str(), 0);
                 GW::Hook::LeaveHook();
                 return;
             } break;
@@ -77,10 +77,10 @@ namespace {
 
     void SetFontStyle(GW::UI::Frame* frame, uint32_t style)
     {
-        if (frame && frame->field93_0x18c != style) {
+        if (frame && frame->field93_0x194 != style) {
             GW::GameThread::Enqueue([frame, style]() {
-                frame->field93_0x18c = style;
-                GW::UI::SendFrameUIMessage(frame, (GW::UI::UIMessage)0x35, 0);
+                frame->field93_0x194 = style;
+                GW::UI::SendFrameUIMessage(frame, GW::UI::UIMessage::kFrameMessage_0x35, 0);
                 });
         }
     }
@@ -149,11 +149,9 @@ namespace {
 
         GW::UI::SetWindowVisible(GW::UI::WindowID_InGameClock, true);
 
-        //const auto instance_timer_frame = GW::UI::CreateUIComponent(GW::UI::GetParentFrame(clock)->frame_id, 0x800, 0xffd, clock->frame_callbacks[0].callback, nullptr, L"InstanceTimer");
-
         SetFontStyle(GW::UI::GetChildFrame(frame, 0), currentFontStyle);
 
-        return frame; // GW::UI::GetFrameById(instance_timer_frame);
+        return frame;
     }
 
     void OnPostUIMessage(GW::HookStatus* status, GW::UI::UIMessage message_id, void* wParam, void* lParam) {
