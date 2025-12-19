@@ -421,12 +421,6 @@ namespace GW {
             AutoTargetNPCs,
             AlwaysShowNearbyNamesPvP,
             FadeDistantNameTags,
-<<<<<<< Updated upstream
-            WaitForVSync = 0x41,
-            DoNotCloseWindowsOnEscape = 0x45,
-            ShowMinimapOnWorldMap,
-            WhispersFromFriendsEtcOnly = 0x55,
-=======
             FlagPref_0x3d,
             FlagPref_0x3e,
             FlagPref_0x3f,
@@ -452,18 +446,11 @@ namespace GW {
             FlagPref_0x53,
             EnhancedDrawDistance,
             WhispersFromFriendsEtcOnly,
->>>>>>> Stashed changes
             ShowChatTimestamps,
             ShowCollapsedBags,
             ItemRarityBorder,
             AlwaysShowAllyNames,
             AlwaysShowFoeNames,
-<<<<<<< Updated upstream
-            LockCompassRotation = 0x5c,
-            EnableGamepad = 0x5d,
-            
-            Count = 0x6c
-=======
             FlagPref_0x5b,
             LockCompassRotation,
             EnableGamepad,
@@ -483,7 +470,6 @@ namespace GW {
             FlagPref_0x6b,
             
             Count
->>>>>>> Stashed changes
         };
         static_assert(FlagPreference::Count == (FlagPreference)0x6c);
         // Used with GetWindowPosition

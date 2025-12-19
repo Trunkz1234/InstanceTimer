@@ -3032,13 +3032,9 @@ namespace GW {
             Weapons_of_Three_Forges,
             Vow_of_Revolution,
             Heroic_Refrain,
-<<<<<<< Updated upstream
-            Count = 0xD6a
-=======
             Reforged_Mode=0xD6A,
             Dhuums_Covenant_Broken,
             Count = 0xD6c
->>>>>>> Stashed changes
         };
 
         enum class SkillType {
