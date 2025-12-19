@@ -12,20 +12,13 @@
 // IMPORTANT: Only include GWCA headers AFTER the delay load directives
 // This ensures that any functions imported from these headers will be delay-loaded
 #include <GWCA/GWCA.h>
-#include <GWCA/stdafx.h>
 #include <GWCA/Managers/UIMgr.h>
-#include <GWCA/Managers/StocMgr.h>
 #include <GWCA/Managers/GameThreadMgr.h>
 #include <GWCA/Managers/ChatMgr.h>
 #include <GWCA/Managers/MapMgr.h>
-#include <GWCA/Managers/AgentMgr.h>
 
 #include <GWCA/Utilities/Hook.h>
 #include <GWCA/Utilities/Hooker.h>
-
-#include <GWCA/Packets/StoC.h>
-
-#include <GWCA/GameEntities/Agent.h>
 
 namespace {
     HMODULE g_hModule = nullptr;

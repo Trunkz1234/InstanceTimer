@@ -29,7 +29,11 @@ namespace GW {
     }
     namespace UI {
         struct WindowPosition;
+<<<<<<< Updated upstream
         enum class FlagPreference: uint32_t;
+=======
+        enum class FlagPreference : uint32_t;
+>>>>>>> Stashed changes
         enum class NumberPreference : uint32_t;
         enum class StringPreference : uint32_t;
         enum class EnumPreference : uint32_t;
@@ -80,7 +84,11 @@ namespace GW {
             kFrameMessage_0x29,             // 0x29
             kFrameMessage_0x2a,             // 0x2a
             kFrameMessage_0x2b,             // 0x2b
+<<<<<<< Updated upstream
             kFrameMessage_0x2c,             // 0x2c
+=======
+            kToggleButtonDown,             // 0x2c
+>>>>>>> Stashed changes
             kFrameMessage_0x2d,             // 0x2d
             kMouseClick2 = 0x31,                   // 0x2e, wparam = UIPacket::kMouseAction*
             kMouseAction,                   // 0x2f, wparam = UIPacket::kMouseAction*
@@ -126,6 +134,7 @@ namespace GW {
             kFrameMessage_0x57,             // 0x57, Multiple uses depending on frame
 
             // High bit messages start at 0x10000000
+<<<<<<< Updated upstream
             kHighBitBase = 0x10000000,
             kFrameMessage_0x10000001,
             kFrameMessage_0x10000002,
@@ -568,6 +577,137 @@ namespace GW {
             kFrameMessage_0x100001b7,
             kFrameMessage_0x100001b8,
             kOpenTemplate,                  // 0x100001B9, wparam = GW::UI::ChatTemplate*
+=======
+            kAgentUpdate        = 0x10000007,        // 0x10000007, wparam = uint32_t agent_id
+            kAgentDestroy       = 0x10000008,        // 0x10000008, wparam = uint32_t agent_id
+            kUpdateAgentEffects = 0x10000009,        // 0x10000009
+            kAgentSpeechBubble = 0x10000017,         // 0x10000017
+            kShowAgentNameTag = 0x10000019,          // 0x10000019, wparam = AgentNameTagInfo*
+            kHideAgentNameTag = 0x1000001A,          // 0x1000001A
+            kSetAgentNameTagAttribs = 0x1000001B,    // 0x1000001B, wparam = AgentNameTagInfo*
+            kSetAgentProfession = 0x1000001D,        // 0x1000001D, wparam = UIPacket::kSetAgentProfession*
+            kChangeTarget = 0x10000020,              // 0x10000020, wparam = UIPacket::kChangeTarget*
+
+            kAgentSkillActivated = 0x10000024, // kAgentSkillPacket
+            kAgentSkillActivatedInstantly = 0x10000025, // kAgentSkillPacket
+            kAgentSkillCancelled = 0x10000026,       // kAgentSkillPacket
+            kAgentSkillStartedCast = 0x10000027,     // 0x10000027, wparam = UIPacket::kAgentStartCasting*
+
+            kShowMapEntryMessage = 0x10000029,       // 0x10000029, wparam = { wchar_t* title, wchar_t* subtitle }
+            kSetCurrentPlayerData = 0x1000002A,      // 0x1000002A, fired after setting the worldcontext player name
+            kPostProcessingEffect = 0x10000034,      // 0x10000034, Triggered when drunk. wparam = UIPacket::kPostProcessingEffect
+            kHeroAgentAdded = 0x10000038,            // 0x10000038, hero assigned to agent/inventory/ai mode
+            kHeroDataAdded = 0x10000039,             // 0x10000039, hero info received from server (name, level etc)
+            kShowXunlaiChest = 0x10000040,           // 0x10000040
+            kMinionCountUpdated = 0x10000046,        // 0x10000046
+            kMoraleChange = 0x10000047,              // 0x10000047, wparam = {agent id, morale percent }
+            kLoginStateChanged = 0x10000050,         // 0x10000050, wparam = {bool is_logged_in, bool unk }
+            kEffectAdd = 0x10000055,                 // 0x10000055, wparam = {agent_id, GW::Effect*}
+            kEffectRenew = 0x10000056,               // 0x10000056, wparam = GW::Effect*
+            kEffectRemove = 0x10000057,              // 0x10000057, wparam = effect id
+            kSkillActivated = 0x1000005b,            // 0x1000005b, wparam ={ uint32_t agent_id , uint32_t skill_id }
+            kUpdateSkillbar = 0x1000005E,            // 0x1000005E, wparam ={ uint32_t agent_id , ... }
+            kUpdateSkillsAvailable = 0x1000005f,     // 0x1000005f, Triggered on a skill unlock, profession change or map load
+            kPlayerTitleChanged = 0x10000064,        // 0x10000064, wparam = { uint32_t player_id, uint32_t title_id }
+            kTitleProgressUpdated = 0x10000065,      // 0x10000065, wparam = title_id
+            kExperienceGained = 0x10000066,          // 0x10000066, wparam = experience amount
+            kWriteToChatLog = 0x1000007F,                // 0x1000007F, wparam = UIPacket::kWriteToChatLog*
+            kWriteToChatLogWithSender = 0x10000080,      // 0x10000080, wparam = UIPacket::kWriteToChatLogWithSender*
+            kAllyOrGuildMessage = 0x10000081,            // 0x10000081, wparam = UIPacket::kAllyOrGuildMessage*
+            kPlayerChatMessage = 0x10000082,             // 0x10000082, wparam = UIPacket::kPlayerChatMessage*
+            kFloatingWindowMoved = 0x10000084,           // 0x10000084, wparam = frame_id
+
+            kFriendUpdated = 0x1000008B,                 // 0x1000008B, wparam = { GW::Friend*, ... }
+            kMapLoaded = 0x1000008C,                     // 0x1000008C
+            kOpenWhisper = 0x10000092,                   // 0x10000092, wparam = wchar* name
+            kLoadMapContext = 0x10000098,                // 0x10000098, wparam = UIPacket::kLoadMapContext
+            kLogout = 0x1000009D,                        // 0x1000009D, wparam = { bool unknown, bool character_select }
+            kCompassDraw = 0x1000009E,                   // 0x1000009E, wparam = UIPacket::kCompassDraw*
+            kOnScreenMessage = 0x100000A2,               // 0x100000A2, wparam = wchar_** encoded_string
+            kDialogButton = 0x100000A3,                  // 0x100000A3, wparam = DialogButtonInfo*
+            kDialogBody = 0x100000A6,                    // 0x100000A6, wparam = DialogBodyInfo*
+            kTargetNPCPartyMember = 0x100000B3,          // 0x100000B3, wparam = { uint32_t unk, uint32_t agent_id }
+            kTargetPlayerPartyMember = 0x100000B4,       // 0x100000B4, wparam = { uint32_t unk, uint32_t player_number }
+            kVendorWindow = 0x100000B5,                  // 0x100000B5, wparam = UIPacket::kVendorWindow
+            kVendorItems = 0x100000B9,                   // 0x100000B9, wparam = UIPacket::kVendorItems
+            kVendorTransComplete = 0x100000BB,           // 0x100000BB, wparam = *TransactionType
+            kVendorQuote = 0x100000BD,                   // 0x100000BD, wparam = UIPacket::kVendorQuote
+            kStartMapLoad = 0x100000C2,                  // 0x100000C2, wparam = { uint32_t map_id, ...}
+            kWorldMapUpdated = 0x100000C7,               // 0x100000C7, Triggered when an area in the world map has been discovered/updated
+            kGuildMemberUpdated = 0x100000DA,            // 0x100000DA, wparam = { GuildPlayer::name_ptr }
+            kShowHint = 0x100000E1,                      // 0x100000E1, wparam = { uint32_t icon_type, wchar_t* message_enc }
+            kWeaponSetSwapComplete = 0x100000E9,         // 0x100000E9, wparam = UIPacket::kWeaponSwap*
+            kWeaponSetSwapCancel = 0x100000EA,           // 0x100000EA
+            kWeaponSetUpdated = 0x100000EB,              // 0x100000EB
+            kUpdateGoldCharacter = 0x100000EC,           // 0x100000EC, wparam = { uint32_t unk, uint32_t gold_character }
+            kUpdateGoldStorage = 0x100000ED,             // 0x100000ED, wparam = { uint32_t unk, uint32_t gold_storage }
+            kInventorySlotUpdated = 0x100000EE,          // 0x100000EE, Triggered when an item is moved into a slot
+            kEquipmentSlotUpdated = 0x100000EF,          // 0x100000EF, Triggered when an item is moved into a slot
+            kInventorySlotCleared = 0x100000F1,          // 0x100000F1, Triggered when an item has been removed from a slot
+            kEquipmentSlotCleared = 0x100000F2,          // 0x100000F2, Triggered when an item has been removed from a slot
+            kPvPWindowContent = 0x100000FA,              // 0x100000FA
+            kPreStartSalvage = 0x10000102,               // 0x10000102, { uint32_t item_id, uint32_t kit_id }
+            kTomeSkillSelection = 0x10000103,            // 0x10000103, wparam = UIPacket::kTomeSkillSelection*
+            kTradePlayerUpdated = 0x10000105,            // 0x10000105, wparam = GW::TraderPlayer*
+            kItemUpdated = 0x10000106,                   // 0x10000106, wparam = UIPacket::kItemUpdated*
+            kMapChange = 0x10000111,                     // 0x10000111, wparam = map id
+            kCalledTargetChange = 0x10000115,            // 0x10000115, wparam = { player_number, target_id }
+            kErrorMessage = 0x10000119,                  // 0x10000119, wparam = { int error_index, wchar_t* error_encoded_string }
+            kPartyHardModeChanged = 0x1000011A,          // 0x1000011A, wparam = { int is_hard_mode }
+            kPartyAddHenchman = 0x1000011B,              // 0x1000011B
+            kPartyRemoveHenchman = 0x1000011C,           // 0x1000011C
+            kPartyAddHero = 0x1000011E,                  // 0x1000011E
+            kPartyRemoveHero = 0x1000011F,               // 0x1000011F
+            kPartyAddPlayer = 0x10000124,                // 0x10000124
+            kPartyRemovePlayer = 0x10000126,             // 0x10000126
+            kDisableEnterMissionBtn = 0x1000012A,        // 0x1000012A, wparam = boolean (1 = disabled, 0 = enabled)
+            kShowCancelEnterMissionBtn = 0x1000012D,     // 0x1000012D
+            kPartyDefeated = 0x1000012F,                 // 0x1000012F
+            kPartySearchInviteReceived = 0x10000137,     // 0x10000137, wparam = UIPacket::kPartySearchInviteReceived*
+            kPartySearchInviteSent = 0x10000139,         // 0x10000139
+            kPartyShowConfirmDialog = 0x1000013A,        // 0x1000013A, wparam = UIPacket::kPartyShowConfirmDialog
+
+            kPreferenceEnumChanged = 0x10000140,         // 0x10000140, wparam = UiPacket::kPreferenceEnumChanged
+            kPreferenceFlagChanged = 0x10000141,         // 0x10000141, wparam = UiPacket::kPreferenceFlagChanged
+            kPreferenceValueChanged = 0x10000142,        // 0x10000142, wparam = UiPacket::kPreferenceValueChanged
+
+            kUIPositionChanged = 0x10000143,             // 0x10000143, wparam = UIPacket::kUIPositionChanged
+            kPreBuildLoginScene = 0x10000144,            // 0x10000144, Called with no args right before login scene is drawn
+            kQuestAdded = 0x1000014E,                    // 0x1000014E, wparam = { quest_id, ... }
+            kQuestDetailsChanged = 0x1000014F,           // 0x1000014F, wparam = { quest_id, ... }
+            kQuestRemoved = 0x10000150,                  // 0x10000150, wparam = { quest_id, ... }
+            kClientActiveQuestChanged = 0x10000151,      // 0x10000151, wparam = { quest_id, ... }. Triggered when the game requests the current quest to change
+            kServerActiveQuestChanged = 0x10000153,      // 0x10000153, wparam = UIPacket::kServerActiveQuestChanged*. Triggered when the server requests the current quest to change
+            kUnknownQuestRelated = 0x10000154,           // 0x10000154
+            kDungeonComplete = 0x10000156,               // 0x10000156
+            kMissionComplete = 0x10000157,               // 0x10000157
+            kVanquishComplete = 0x10000159,              // 0x10000159
+            kObjectiveAdd = 0x1000015A,                  // 0x1000015A, wparam = UIPacket::kObjectiveAdd*
+            kObjectiveComplete = 0x1000015B,             // 0x1000015B, wparam = UIPacket::kObjectiveComplete*
+            kObjectiveUpdated = 0x1000015C,              // 0x1000015C, wparam = UIPacket::kObjectiveUpdated*
+            kTradeSessionStart = 0x10000162,             // 0x10000162, wparam = { trade_state, player_number }
+            kTradeSessionUpdated = 0x10000168,           // 0x10000168, no args
+            kTriggerLogoutPrompt = 0x1000016E,           // 0x1000016E, no args
+            kToggleOptionsWindow = 0x1000016F,           // 0x1000016F, no args
+            kCheckUIState = 0x10000172,                  // 0x10000172
+            kRedrawItem = 0x10000174,                    // 0x10000174, wparam = uint32_t item_id
+            kCloseSettings = 0x10000176,                 // 0x10000176
+            kChangeSettingsTab = 0x10000177,             // 0x10000177, wparam = uint32_t is_interface_tab
+
+            kGuildHall = 0x1000017C,                     // 0x1000017C, wparam = gh key (uint32_t[4])
+            kLeaveGuildHall = 0x1000017E,                // 0x1000017E
+            kTravel = 0x1000017F,                        // 0x1000017F
+            kOpenWikiUrl = 0x10000180,                   // 0x10000180, wparam = char* url
+            kAppendMessageToChat = 0x1000018E,           // 0x1000018E, wparam = wchar_t* message
+            kHideHeroPanel = 0x1000019C,                 // 0x1000019C, wparam = hero_id
+            kShowHeroPanel = 0x1000019D,                 // 0x1000019D, wparam = hero_id
+            kGetInventoryAgentId = 0x100001A1,           // 0x100001A1, wparam = 0, lparam = uint32_t* agent_id_out. Used to fetch which agent is selected
+            kEquipItem = 0x100001A2,                     // 0x100001A2, wparam = { item_id, agent_id }
+            kMoveItem = 0x100001A3,                      // 0x100001A3, wparam = { item_id, to_bag, to_slot, bool prompt }
+            kInitiateTrade = 0x100001A5,                 // 0x100001A5
+            kInventoryAgentChanged = 0x100001B5,         // 0x100001B5, Triggered when inventory needs updating due to agent change; no args
+            kOpenTemplate = 0x100001BE,                  // 0x100001BE, wparam = GW::UI::ChatTemplate*
+>>>>>>> Stashed changes
 
             // GWCA Client to Server commands. Only added the ones that are used for hooks, everything else goes straight into GW
 
@@ -597,6 +737,17 @@ namespace GW {
         };
 
         namespace UIPacket {
+<<<<<<< Updated upstream
+=======
+            struct kErrorMessage {
+                uint32_t error_id;
+                wchar_t* message;
+            };
+            struct kAgentSkillPacket {
+                uint32_t agent_id;
+                GW::Constants::SkillID skill_id;
+            };
+>>>>>>> Stashed changes
             struct kLoadMapContext {
                 const wchar_t* file_name;
                 Constants::MapID map_id;
@@ -719,7 +870,11 @@ namespace GW {
                 uint32_t h0008;
                 uint32_t h000c;
             };
+<<<<<<< Updated upstream
             struct kAgentStartCasting {
+=======
+            struct kAgentSkillStartedCast {
+>>>>>>> Stashed changes
                 uint32_t agent_id;
                 Constants::SkillID skill_id;
                 float duration;
@@ -936,4 +1091,8 @@ namespace GW {
             };
         }
     }
+<<<<<<< Updated upstream
 }
+=======
+}
+>>>>>>> Stashed changes
