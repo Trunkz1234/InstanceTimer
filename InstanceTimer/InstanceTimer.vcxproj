@@ -118,8 +118,7 @@
       <AdditionalOptions>/DELAYLOAD:gwca.dll %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>xcopy /Y /D "$(SolutionDir)\InstanceTimer\GWCA\bin\gwca.dll" "$(TargetDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

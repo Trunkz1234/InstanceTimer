@@ -58,7 +58,7 @@ namespace {
                     seconds.count(),
                     milliseconds.count() / 100);
 
-                GW::UI::SendFrameUIMessage(GW::UI::GetChildFrame(frame, 0), (GW::UI::UIMessage)0x5a, (void*)timer.c_str(), 0);
+                GW::UI::SendFrameUIMessage(GW::UI::GetChildFrame(frame, 0), (GW::UI::UIMessage)0x5c, (void*)timer.c_str(), 0);
                 GW::Hook::LeaveHook();
                 return;
             } break;
