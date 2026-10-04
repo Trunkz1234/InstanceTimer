@@ -463,7 +463,7 @@ namespace GW {
             Test_Map_solo_areas, // "This is a debug map to allow multiplayer testing of current solo areas."
             Nightfallen_Garden,
             Churrhir_Fields,
-            Beknur_Harbor_outpost,
+            Beknur_Harbor,
             Kodonur_Crossroads_cinematic,
             Rilohn_Refuge_cinematic,
             Pogahn_Passage_cinematic,
@@ -493,7 +493,7 @@ namespace GW {
             Lahtenda_Bog,
             Arbor_Bay,
             Issnur_Isles,
-            Beknur_Harbor,
+            Beknur_Harbor_outpost,
             Mehtani_Keys,
             Kodlonu_Hamlet_outpost,
             Island_of_Shehkah,
@@ -895,10 +895,10 @@ namespace GW {
             Forsaken_Tunnels_Presearing_Level2,
             Forsaken_Tunnels_Presearing_Level3,
 
+            Unknown_879,
             Forsaken_Tunnels_Level1,
             Forsaken_Tunnels_Level2,
-            Forsaken_Tunnels_Level3,
-            Forsaken_Tunnels_Level4, 
+            Forsaken_Tunnels_Level3, 
 
             Count = 0x373,
         };

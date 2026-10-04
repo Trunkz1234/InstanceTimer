@@ -23,8 +23,7 @@ namespace GW {
 
     namespace PartyMgr {
 
-        // set or unset the fact that ticking will work as a toggle instead
-        // of showing a drop-down menu
+        // Set or unset whether ticking works as a toggle instead of showing a drop-down menu.
 
         GWCA_API void SetTickToggle(bool enable);
 
@@ -89,6 +88,7 @@ namespace GW {
         GWCA_API bool SetHeroTarget(uint32_t hero_agent_id, uint32_t target_agent_id = 0);
         GWCA_API bool SetHeroBehavior(uint32_t hero_agent_id, HeroBehavior behavior);
         GWCA_API bool SetPetBehavior(uint32_t owner_agent_id, HeroBehavior behavior);
+        GWCA_API bool SetHeroSkillDisabled(uint32_t hero_agent_id, uint32_t slot_index, bool disabled = true);
 
         GWCA_API PetInfo* GetPetInfo(uint32_t owner_agent_id = 0);
 

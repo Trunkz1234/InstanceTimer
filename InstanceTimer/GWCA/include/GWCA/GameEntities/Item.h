@@ -50,11 +50,12 @@ namespace GW {
     static_assert(sizeof(DyeInfo) == 3, "struct DyeInfo has incorrect size");
 
     struct ItemData {
-        uint32_t model_file_id = 0;
-        GW::Constants::ItemType type = (GW::Constants::ItemType)0xff;
-        GW::DyeInfo dye = {};
-        uint32_t value = 0;
-        uint32_t interaction = 0;
+        // No default member initializers: GCC rejects non-trivial members in the anonymous struct/union in Agent.h that uses this.
+        uint32_t model_file_id;
+        GW::Constants::ItemType type;
+        GW::DyeInfo dye;
+        uint32_t value;
+        uint32_t interaction;
     };
     static_assert(sizeof(ItemData) == 0x10, "struct ItemData has incorrect size");
 
@@ -72,8 +73,9 @@ namespace GW {
         uint32_t skill_point_cost;
         uint32_t material_cost_count;
         MaterialCost* material_cost_buffer; // NB: The game stores a cached array of material amounts that the player has in inventory; we don't care about it though!
+        uint32_t h0014; // added to GW 2026-09-30
     };
-    static_assert(sizeof(ItemFormula) == 0x14);
+    static_assert(sizeof(ItemFormula) == 0x18);
 
     struct Bag { // total: 0x28/40
         /* +h0000 */ Constants::BagType bag_type;
@@ -208,13 +210,16 @@ namespace GW {
         /* +h0088 */ uint32_t h0088[2];
         /* +h0090 */ uint32_t gold_character;
         /* +h0094 */ uint32_t gold_storage;
+        /* +0x098 */ uint32_t cached_hash;  // at m_slotSize offset
+        /* +0x09C */ uint32_t next_offset;  // = 0x9c
+        /* +0x0A0 */ Inventory* next;       // chain pointer
 
         [[nodiscard]] uint32_t inventory_id() const
         {
             return (uint32_t)unused_bag; // Fucked ourselves with this one; bag ids depend on the array starting at the inventory id...
         }
     };
-    static_assert(sizeof(Inventory) == 152, "struct Inventory has incorrect size");
+    static_assert(sizeof(Inventory) == 0xa4, "struct Inventory has incorrect size");
 
     // Static struct for info about available item upgrade info, used for PvP Equipment window
     struct PvPItemUpgradeInfo {

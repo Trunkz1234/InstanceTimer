@@ -36,32 +36,34 @@ namespace {
     GW::UI::UIInteractionCallback OnInstanceTimerWindow_UICallback_Func = 0, OnInstanceTimerWindow_UICallback_Ret = 0;
     void OnInstanceTimerWindow_UICallback(GW::UI::InteractionMessage* message, void* wParam, void* lParam) {
         GW::Hook::EnterHook();
-        const auto frame = GW::UI::GetFrameById(message->frame_id);
-        const auto clock = GW::UI::GetFrameByLabel(L"StClock"); // To be removed if creating new UI component
-        //if (frame && frame->child_offset_id == instance_timer_child_frame_id) {
-        if (frame && frame->child_offset_id == clock->child_offset_id) {
-            switch ((GW::UI::UIMessage)message->message_id) {
-            case GW::UI::UIMessage::kRefreshContent:
-            case GW::UI::UIMessage::kFrameMessage_0x3d: {
+        const auto message_id = message ? static_cast<GW::UI::UIMessage>(message->message_id) : GW::UI::UIMessage::kNone;
+        if (message_id == GW::UI::UIMessage::kRefreshContent ||
+            message_id == GW::UI::UIMessage::kFrameMessage_0x3d) {
+            const auto frame = GW::UI::GetFrameById(message->frame_id);
+            const auto clock = GW::UI::GetFrameByLabel(L"StClock"); // To be removed if creating new UI component
+            //if (frame && frame->child_offset_id == instance_timer_child_frame_id) {
+            if (frame && clock && frame->child_offset_id == clock->child_offset_id) {
+                const auto child = GW::UI::GetChildFrame(frame, 0);
+                if (child) {
 
-                const int instance_time = GW::Map::GetInstanceTime();
-                const auto duration = std::chrono::milliseconds(instance_time);
+                    const int instance_time = GW::Map::GetInstanceTime();
+                    const auto duration = std::chrono::milliseconds(instance_time);
 
-                const auto hours = std::chrono::duration_cast<std::chrono::hours>(duration);
-                const auto minutes = std::chrono::duration_cast<std::chrono::minutes>(duration % std::chrono::hours(1));
-                const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration % std::chrono::minutes(1));
-                const auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(duration % std::chrono::seconds(1));
+                    const auto hours = std::chrono::duration_cast<std::chrono::hours>(duration);
+                    const auto minutes = std::chrono::duration_cast<std::chrono::minutes>(duration % std::chrono::hours(1));
+                    const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration % std::chrono::minutes(1));
+                    const auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(duration % std::chrono::seconds(1));
 
-                const auto timer = std::format(L"\x108\x107{:01}:{:02}:{:02}.{:01}\x01",
-                    hours.count(),
-                    minutes.count(),
-                    seconds.count(),
-                    milliseconds.count() / 100);
+                    const auto timer = std::format(L"\x108\x107{:01}:{:02}:{:02}.{:01}\x01",
+                        hours.count(),
+                        minutes.count(),
+                        seconds.count(),
+                        milliseconds.count() / 100);
 
-                GW::UI::SendFrameUIMessage(GW::UI::GetChildFrame(frame, 0), (GW::UI::UIMessage)0x5c, (void*)timer.c_str(), 0);
-                GW::Hook::LeaveHook();
-                return;
-            } break;
+                    GW::UI::SendFrameUIMessage(child, (GW::UI::UIMessage)0x5c, (void*)timer.c_str(), 0);
+                    GW::Hook::LeaveHook();
+                    return;
+                }
             }
         }
         OnInstanceTimerWindow_UICallback_Ret(message, wParam, lParam);
@@ -147,8 +149,14 @@ namespace {
         return frame;
     }
 
+    void OnCreateUIComponent(GW::UI::CreateUIComponentPacket* message) {
+        if (!(message && message->component_label) || wcscmp(message->component_label, L"StClock") != 0)
+            return;
+        GW::GameThread::Enqueue(CreateInstanceTimerFrame);
+    }
+
     void OnPostUIMessage(GW::HookStatus* status, GW::UI::UIMessage message_id, void* wParam, void* lParam) {
-        CreateInstanceTimerFrame();
+        GW::GameThread::Enqueue(CreateInstanceTimerFrame);
     }
 
     void Init(HMODULE hModule) {
@@ -163,6 +171,7 @@ namespace {
         for (auto message : ui_messages) {
             GW::UI::RegisterUIMessageCallback(&ChatCmdHook, message, OnPostUIMessage, 0x800);
         }
+        GW::UI::RegisterCreateUIComponentCallback(&OnCreateUIComponent_Entry, OnCreateUIComponent, 0x800);
         GW::Chat::CreateCommand(&ChatCmdHook, L"font", OnChatCmd);
         GW::GameThread::Enqueue(CreateInstanceTimerFrame);
     }

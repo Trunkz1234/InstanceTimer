@@ -6,6 +6,7 @@
 #include <GWCA/Constants/Constants.h>
 
 #include <GWCA/GameEntities/Item.h>
+#include <GWCA/Utilities/Export.h>
 
 namespace GW {
     typedef uint32_t AgentID;
@@ -18,6 +19,8 @@ namespace GW {
 
     struct Vec3f;
     struct GamePos;
+
+    struct AgentEffect;
 
     struct VisibleEffect {
         uint32_t unk; //enchantment = 1, weapon spell = 9
@@ -88,19 +91,12 @@ namespace GW {
         /* +h0109 */ uint8_t offhand_item_type;     // Offhand item type for stance/animation
         /* +h010A */ uint16_t offhand_item_id;      // Offhand item id for stance/animation
 
-        inline uint32_t GetType() {
-            return vtable->GetType(this);
-        }
-        inline bool RedrawEquipmentSlot(uint32_t slot) {
-            if (!(slot < _countof(items) && items[slot].model_file_id))
-                return false;
-            return vtable->EquipItem(this, 0, slot), true;
-        }
-        inline bool UndrawEquipmentSlot(uint32_t slot) {
-            if (!(slot < _countof(items) && items[slot].model_file_id))
-                return false;
-            return vtable->RemoveItem(this, 0, slot), true;
-        }
+        // These three call through the game's vtable (see Source/Agent.cpp) -- kept
+        // out of line so the wasm table-adoption dance stays an implementation
+        // detail rather than something every caller's translation unit compiles.
+        GWCA_API uint32_t GetType();
+        GWCA_API bool RedrawEquipmentSlot(uint32_t slot);
+        GWCA_API bool UndrawEquipmentSlot(uint32_t slot);
     };
     static_assert(sizeof(NPCEquipment) == 0x10C);
 
@@ -143,6 +139,30 @@ namespace GW {
     struct AgentGadget;
     struct AgentLiving;
 
+	// Bits in GW::Agent::name_properties, which AvAgent.cpp recomputes name tag visibility from.
+	enum NameTagFlags : uint32_t {
+		// In the mouse pick list; cleared wholesale whenever that list is rebuilt.
+		NameTagFlags_Picked = 0x8,
+		// Moused-over agent: underlines the tag, glows the model, draws the selection decal.
+		NameTagFlags_Highlighted = 0x10,
+		// Within name tag draw distance (1500 gwinches from the camera).
+		NameTagFlags_InRange = 0x20,
+		// The evaluated target - manual target, else auto target.
+		NameTagFlags_EvaluatedTarget = 0x80,
+		// The manual target, while a different auto target exists.
+		NameTagFlags_ManualTarget = 0x100,
+		// Name tags globally suppressed (cutscenes, /hideui); refcounted by the client.
+		NameTagFlags_Suppressed = 0x200,
+		// Agent::type passes the persistent filter from the Guild Wars name tag options.
+		NameTagFlags_PassesFilter = 0x400,
+		// Dropped item reserved for another player, so it never gets a distance-based tag.
+		NameTagFlags_NotOwnedByPlayer = 0x800,
+		// Agent::type passes the transient filter, bound to the "show item names" key.
+		NameTagFlags_PassesTransientFilter = 0x1000,
+		// Name tag disabled for this agent regardless of any filter.
+		NameTagFlags_Disabled = 0x20000
+	};
+
     struct Agent {
         /* +h0000 */ uint32_t* vtable;
         /* +h0004 */ uint32_t h0004;
@@ -163,7 +183,7 @@ namespace GW {
         /* +h004C */ float rotation_angle; // Rotation in radians from East (-pi to pi)
         /* +h0050 */ float rotation_cos; // cosine of rotation
         /* +h0054 */ float rotation_sin; // sine of rotation
-        /* +h0058 */ uint32_t name_properties; // Bitmap basically telling what the agent is
+        /* +h0058 */ NameTagFlags name_properties; // Bitmap basically telling what the agent is
         /* +h005C */ uint32_t ground;
         /* +h0060 */ uint32_t h0060;
         /* +h0064 */ Vec3f terrain_normal;
@@ -229,12 +249,22 @@ namespace GW {
     static_assert(sizeof(AgentGadget) == 228, "struct AgentGadget has incorrect size");
     static_assert(offsetof(AgentGadget, h00C4) == 0xC4, "struct AgentGadget offsets are incorrect");
 
+    // Internal engine-only action-queue node: one per skill/attack state change (activated, stopped,
+    // interrupted, cast started, knocked down...) from StoC GenericValue/GenericValueTarget packets, drained
+    // to broadcast the matching kAgentSkill* UI message. GenericValueID::interrupted (35) does NOT queue one
+    // of these (it only drives a cosmetic flash), so this queue can't distinguish a real interrupt from a
+    // self-cancel - hook the raw StoC packet for that. Layout unknown beyond the linkage below; opaque/internal.
+    struct ActionChar;
+
     struct AgentLiving : public Agent { // total: 0x1C4/452
-        /* +h00C4 */ AgentID owner;
-        /* +h00C8 */ uint32_t h00C8;
-        /* +h00CC */ uint32_t h00CC;
-        /* +h00D0 */ uint32_t h00D0;
-        /* +h00D4 */ uint32_t h00D4[3];
+        // +h00C4/+h00C8/+h00CC: for Livings, repurposed as a GW::TList<ActionChar> (offset + TLink) queuing
+        // not-yet-processed ActionChar events. +h00D0/+h00D4[0,1]: a second TList recycling drained nodes
+        // back to their pool (model_state bit 0x400 flags it non-empty).
+        /* +h00C4 */ AgentID owner; // AgentItem only; TList offset field for Livings (see above).
+        /* +h00C8 */ TLink<ActionChar> action_queue; // Internal; next_node low bit set = empty.
+        /* +h00D0 */ uint32_t h00D0; // Internal; TList offset field for action_queue_recycle.
+        /* +h00D4 */ TLink<ActionChar> action_queue_recycle; // Internal; see above.
+        /* +h00DC */ uint32_t h00DC; // Unidentified.
         /* +h00E0 */ float animation_type;
         /* +h00E4 */ uint32_t h00E4[2];
         /* +h00EC */ float weapon_attack_speed; // The base attack speed in float of last attacks weapon. 1.33 = axe, sWORD, daggers etc.
@@ -265,10 +295,13 @@ namespace GW {
         /* +h0138 */ uint32_t max_hp; // Only works for yourself
         /* +h013C */ uint32_t effects; // Bitmap for effects to display when targetted. DOES include hexes
         /* +h0140 */ uint32_t h0140;
-        /* +h0144 */ uint8_t  hex; // Bitmap for the hex effect when targetted (apparently obsolete!) (yes)
-        /* +h0145 */ uint8_t  h0145[19];
-        /* +h0158 */ uint32_t model_state; // Different values for different states of the model.
-        /* +h015C */ uint32_t type_map; // Odd variable! 0x08 = dead, 0xC00 = boss, 0x40000 = spirit, 0x400000 = player
+        /* +h0144 */ uint32_t h0144; 
+        /* +h0148 */ GW::AgentEffect* next_queued_agent_effect; // Points to the next effect that needs to be processed in the update loop for this agent.
+        /* +h014c */ uint32_t h014c;
+        /* +h0150 */ uint32_t h0150;
+        /* +h0154 */ uint32_t h0154;
+        /* +h0158 */ uint32_t model_state; // Different values for different states of the model. Bit 0x400 (internal): action_queue_recycle above has pending nodes.
+        /* +h015C */ uint32_t type_map; // Odd variable! 0x08 = dead, 0xC00 = boss, 0x40000 = spirit, 0x400000 = player. Bit 0x10000 (internal): action_queue above is being torn down.
         /* +h0160 */ uint32_t h0160[4];
         /* +h0170 */ uint32_t in_spirit_range; // Tells if agent is within spirit range of you. Doesn't work anymore?
         /* +h0174 */ VisibleEffectList visible_effects;
@@ -277,12 +310,15 @@ namespace GW {
         /* +h0188 */ float    animation_speed;  // Speed of the current animation
         /* +h018C */ uint32_t animation_code; // related to animations
         /* +h0190 */ uint32_t animation_id;     // Id of the current animation
+        // +h01A8/+h01AC/+h01B0 (within h0194 below): a third, unrelated TList - a generic deferred/one-shot
+        // notification queue (target agent_id, fired flag, type index, optional callback fn), not part of the
+        // ActionChar subsystem above. +h0194-+h01A7 (20 bytes) are still unidentified.
         /* +h0194 */ uint8_t  h0194[32];
         /* +h01B4 */ uint8_t  dagger_status; // 0x1 = used lead attack, 0x2 = used offhand attack, 0x3 = used dual attack
         /* +h01B5 */ Constants::Allegiance  allegiance; // 0x1 = ally/non-attackable, 0x2 = neutral, 0x3 = enemy, 0x4 = spirit/pet, 0x5 = minion, 0x6 = npc/minipet
         /* +h01B6 */ uint16_t  weapon_type; // 1=bow, 2=axe, 3=hammer, 4=daggers, 5=scythe, 6=spear, 7=sWORD, 10=wand, 12=staff, 14=staff
         /* +h01B8 */ uint16_t  skill; // 0 = not using a skill. Anything else is the Id of that skill
-        /* +h01BA */ uint16_t  h01BA;
+        /* +h01BA */ uint16_t  h01BA; // Low byte (internal): per-agent index/tint used when formatting skill activated/stopped/interrupted floating text.
         /* +h01BC */ uint8_t  weapon_item_type;
         /* +h01BD */ uint8_t  offhand_item_type;
         /* +h01BE */ uint16_t  weapon_item_id;

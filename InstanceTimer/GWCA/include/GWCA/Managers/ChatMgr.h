@@ -1,6 +1,7 @@
 #pragma once
 
 #include <GWCA/Utilities/Export.h>
+#include <GWCA/Utilities/Hook.h>
 
 namespace GW {
 	struct Module;
@@ -11,15 +12,19 @@ namespace GW {
 
 	namespace Chat {
 		typedef uint32_t Color;
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable: 4200)
+#endif
 		struct ChatMessage {
 			uint32_t channel;
 			uint32_t unk1;
 			FILETIME timestamp;
 			wchar_t message[0];
 		};
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 		const size_t CHAT_LOG_LENGTH = 0x200;
 		struct ChatBuffer {
@@ -69,10 +74,14 @@ namespace GW {
 			CHANNEL_UNKNOW = -1
 		};
 
+		typedef HookCallback<const wchar_t*, const wchar_t*> ChatLinkCallback;
+
 		GWCA_API Chat::ChatBuffer* GetChatLog();
 		GWCA_API bool AddToChatLog(wchar_t* message, uint32_t channel);
 		GWCA_API bool GetIsTyping();
 
+		GWCA_API bool SendChat(const char* msg);
+		GWCA_API bool SendChat(const wchar_t* msg);
 		GWCA_API bool SendChat(char channel, const char* msg);
 		GWCA_API bool SendChat(char channel, const wchar_t* msg);
 		GWCA_API bool SendChat(const wchar_t* to, const wchar_t* msg);
@@ -96,12 +105,11 @@ namespace GW {
 
 		GWCA_API Channel GetChannel(wchar_t opcode);
 		GWCA_API Channel GetChannel(char opcode);
+		GWCA_API Channel GetCurrentChatChannel();
 	};
 }
 
-// ============================================================
 // C Interop API
-// ============================================================
 extern "C" {
 	GWCA_API void* GetChatLog();
 	GWCA_API bool     AddToChatLog(wchar_t* message, uint32_t channel);
